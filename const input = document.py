@@ -7,10 +7,12 @@ import sys
 import time
 import json
 
+
 pygame.init()
 width, height = 1920, 1080
 win = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Убей пещерного монстра")
+
 
 gray = (200, 200, 200)
 gold = (255, 215, 0)
@@ -22,6 +24,7 @@ shop_bg_color = (180, 180, 180)
 admin_bg_color = (30, 30, 30)  # Темный фон для админ меню
 clock = pygame.time.Clock()
 
+
 monster_size = 80
 money_size = 40
 diamond_size = 40
@@ -29,17 +32,21 @@ speed = 8  # будет изменяться админом
 enemy_speed = 4
 enemy_size = 70
 
+
 font = pygame.font.SysFont(None, 48)
 game_over_font = pygame.font.SysFont(None, 72)
 menu_font = pygame.font.SysFont(None, 80)
 shop_font = pygame.font.SysFont(None, 30)
 
+
 SAVE_FILE = "savegame.json"
+
 
 attack_cooldown_levels = [9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000]
 attack_cooldown_prices = [50, 100, 200, 300, 500, 800, 1200, 1500, 2000]
 hp_regen_levels = [9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000]
 hp_regen_prices = [50, 100, 200, 300, 500, 800, 1200, 1500, 2000]
+
 
 def load_image_from_url(url, size, retries=1, delay=0.5, timeout=2.0):
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -58,18 +65,64 @@ def load_image_from_url(url, size, retries=1, delay=0.5, timeout=2.0):
     print(f"Не удалось загрузить изображение с {url}: {last_err}. Использую плейсхолдер.")
     return None
 
+
 monster_image_url = "https://img.itch.zone/aW1nLzE1MDU5MTE3LnBuZw==/original/q6WAbp.png"
 money_image_url = "https://www.clipartmax.com/png/full/395-3953417_clip-art-pixel-art-money-clip-art-pixel-art-money.png"
 diamond_image_url = "https://lootx.com/assets/images-giveaways/psx-gem.png"
-enemy_image_url = "https://pixelartmaker-data-78746291193.nyc3.digitaloceanspaces.com/image/2440a3082694594.png"
 
 monster_image = load_image_from_url(monster_image_url, (monster_size, monster_size))
 money_image = load_image_from_url(money_image_url, (money_size, money_size))
 diamond_image = load_image_from_url(diamond_image_url, (diamond_size, diamond_size))
-enemy_image = load_image_from_url(enemy_image_url, (enemy_size, enemy_size))
+
 
 game_bg_url = "https://media.thingtrunk.com/press-kit/book-of-demons/images/bod_artwork_07.png"
 game_bg_image = load_image_from_url(game_bg_url, (width, height))
+
+# Список врагов с параметрами и URL их картинок
+enemies = [
+    {
+        "name": "Монстр",
+        "hp": 20,
+        "attack": 10,
+        "image_url": "https://pixelartmaker-data-78746291193.nyc3.digitaloceanspaces.com/image/2440a3082694594.png"
+    },
+    {
+        "name": "Скелет",
+        "hp": 40,
+        "attack": 20,
+        "image_url": "file:///C:/Users/admin/Pictures/New%20Piskel.png"
+    },
+    {
+        "name": "Зомби",
+        "hp": 60,
+        "attack": 30,
+        "image_url": "file:///C:/Users/admin/Pictures/New%20Piskel%20(1).png"
+    },
+    {
+        "name": "Приведение",
+        "hp": 80,
+        "attack": 40,
+        "image_url": "file:///C:/Users/admin/Pictures/New%20Piskel%20(2).png"  # Пример, при необходимости замените
+    },
+    {
+        "name": "Дракон",
+        "hp": 100,
+        "attack": 80,
+        "image_url": "https://avatars.mds.yandex.net/i?id=748542c47ea86b5dd9723f64008654c9_sr-4633509-images-thumbs&n=13"  # Пример, при необходимости замените
+    },
+]
+
+# Загрузка изображений врагов
+def load_enemy_images():
+    for enemy in enemies:
+        img = load_image_from_url(enemy["image_url"], (enemy_size, enemy_size))
+        if img is None:
+            placeholder = pygame.Surface((enemy_size, enemy_size))
+            placeholder.fill(red)
+            enemy["image"] = placeholder
+        else:
+            enemy["image"] = img
+
 
 def draw_health_bar(x, y, current_hp, max_hp, bar_width, bar_height):
     ratio = max(0, min(current_hp, max_hp)) / max_hp
@@ -83,17 +136,20 @@ def draw_health_bar(x, y, current_hp, max_hp, bar_width, bar_height):
     pygame.draw.rect(win, fill_color, (x, y, int(bar_width * ratio), bar_height))
     pygame.draw.rect(win, black, (x, y, bar_width, bar_height), 2)
 
+
 def draw_monster(x, y):
     if monster_image:
         win.blit(monster_image, (x, y))
     else:
         pygame.draw.rect(win, (139, 69, 19), (x, y, monster_size, monster_size))
 
+
 def draw_money(x, y):
     if money_image:
         win.blit(money_image, (x, y))
     else:
         pygame.draw.rect(win, gold, (x, y, money_size, money_size))
+
 
 def draw_diamond(x, y):
     if diamond_image:
@@ -106,7 +162,8 @@ def draw_diamond(x, y):
             (x, y + diamond_size // 2)
         ])
 
-def draw_enemy(x, y, hp, attack):
+# Изменена с добавлением изображения врага
+def draw_enemy(x, y, hp, attack, enemy_image):
     if enemy_image:
         win.blit(enemy_image, (x, y))
     else:
@@ -116,12 +173,14 @@ def draw_enemy(x, y, hp, attack):
     win.blit(hp_text, (x, y - 80))
     win.blit(att_text, (x, y - 50))
 
+
 def show_score(score, hp, attack_damage, money_count, diamond_count, currency_multiplier):
     mult_text = f"x{currency_multiplier}"
     text = font.render(
         f"Валюта: {score}  HP: {hp}  Урон: {attack_damage}  Деньги: {money_count}  Алмазы: {diamond_count}  Множитель валюты: {mult_text}",
         True, white)
     win.blit(text, (4, 4))
+
 
 def show_game_over(message):
     t1 = game_over_font.render("Игра окончена!", True, red)
@@ -135,6 +194,7 @@ def show_game_over(message):
     win.blit(t3, r3)
     pygame.display.update()
 
+
 def save_game(state):
     try:
         data = state.copy()
@@ -144,6 +204,7 @@ def save_game(state):
             json.dump(data, f)
     except Exception as e:
         print("Ошибка сохранения:", e)
+
 
 def load_game():
     try:
@@ -156,6 +217,7 @@ def load_game():
         print("Ошибка загрузки сохранения или сохранения нет:", e)
         return None
 
+
 def reset_game():
     global speed
     speed = 8
@@ -167,8 +229,11 @@ def reset_game():
     score = 0
     alive = True
     monkey_hp = 20  # HP игрока (без уровней)
-    enemy_hp = 20  # Постоянный HP врага
-    enemy_attack = 5  # Постоянный урон врага
+    enemy_level = 0  # стартовый уровень врага
+    enemy_data = enemies[enemy_level]
+    enemy_hp = enemy_data["hp"]
+    enemy_attack = enemy_data["attack"]
+    enemy_image = enemy_data["image"]
     
     return dict(
         x=x, y=y,
@@ -177,6 +242,7 @@ def reset_game():
         enemy_x=enemy_x, enemy_y=enemy_y,
         score=score, alive=alive,
         monkey_hp=monkey_hp, enemy_hp=enemy_hp, enemy_attack=enemy_attack,
+        enemy_level=enemy_level, enemy_image=enemy_image,
         last_monkey_attack_time=0,
         last_enemy_attack_time=0,
         last_monkey_regen_time=0,
@@ -528,7 +594,6 @@ def game_loop_with_state(state):
         clock.tick(30)
         current_time = pygame.time.get_ticks()
 
-        # Перед обработкой событий обнулить переменные движения:
         move_x, move_y = 0, 0
 
         for event in pygame.event.get():
@@ -538,7 +603,6 @@ def game_loop_with_state(state):
                 sys.exit()
 
             elif event.type == pygame.KEYDOWN:
-                # Если открыт диалог выхода, обрабатываем только его
                 if state.get('confirm_exit'):
                     if event.key == pygame.K_1:
                         save_game(state)
@@ -554,15 +618,13 @@ def game_loop_with_state(state):
                     shop_open = not shop_open
                 if state['alive'] and not shop_open:
                     if event.key == pygame.K_ESCAPE:
-                        # Открыть диалог подтверждения выхода
                         state['confirm_exit'] = True
-                    elif event.key == pygame.K_TAB:  # Доступ к админ меню
+                    elif event.key == pygame.K_TAB:
                         password = input_password()
-                        if password == "1306":  # Простой пароль для админа
+                        if password == "1306":
                             admin_menu(state)
                         move_x, move_y = 0, 0
                     elif event.key in (pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d):
-                        # Нажатия WASD только задают направление; никогда не останавливают
                         state['last_dir_key'] = event.key
                         state['last_dir_time'] = pygame.time.get_ticks()
                         if event.key == pygame.K_a:
@@ -636,13 +698,9 @@ def game_loop_with_state(state):
                             state['hp_regen_index'] += 1
 
             elif event.type == pygame.KEYUP:
-                # Для режима "нажал и идёт сам" отпускание клавиш не останавливает движение
                 pass
 
-        # Логика движения теперь по однократному нажатию (toggle),
-        # поэтому здесь не читаем удержание клавиш.
-
-        # Если магазин открыт или активен диалог выхода — пауза игры
+        # Пауза, если магазин открыт или диалог выхода
         if shop_open or state.get('confirm_exit'):
             if game_bg_image:
                 win.blit(game_bg_image, (0, 0))
@@ -652,7 +710,7 @@ def game_loop_with_state(state):
                 draw_money(mx, my)
             for (dx, dy) in state['diamond_positions']:
                 draw_diamond(dx, dy)
-            draw_enemy(state['enemy_x'], state['enemy_y'], state['enemy_hp'], state['enemy_attack'])
+            draw_enemy(state['enemy_x'], state['enemy_y'], state['enemy_hp'], state['enemy_attack'], state['enemy_image'])
             draw_monster(state['x'], state['y'])
             draw_health_bar(state['x'], state['y'] - 15, state['monkey_hp'], 20, monster_size, 10)
             draw_health_bar(state['enemy_x'], state['enemy_y'] - 15, state['enemy_hp'], 20, enemy_size, 10)
@@ -660,7 +718,6 @@ def game_loop_with_state(state):
             if shop_open:
                 draw_shop(state)
             if state.get('confirm_exit'):
-                # Рисуем затемнение и варианты
                 overlay = pygame.Surface((width, height), pygame.SRCALPHA)
                 overlay.fill((0, 0, 0, 160))
                 win.blit(overlay, (0, 0))
@@ -675,20 +732,20 @@ def game_loop_with_state(state):
             pygame.display.update()
             continue
 
-        # Обновление позиции игрока (если не пауза)
+        # Обновление позиции игрока
         state['x'] += state.get('move_x', 0)
         state['y'] += state.get('move_y', 0)
         state['x'] = max(0, min(state['x'], width - monster_size))
         state['y'] = max(0, min(state['y'], height - monster_size))
 
-        # Движение врага к игроку и прямоугольники коллизий
+        # Движение врага к игроку
         state['enemy_x'], state['enemy_y'] = move_enemy_towards_monster(
             state['enemy_x'], state['enemy_y'], state['x'], state['y']
         )
         monster_rect = pygame.Rect(state['x'], state['y'], monster_size, monster_size)
         enemy_rect = pygame.Rect(state['enemy_x'], state['enemy_y'], enemy_size, enemy_size)
 
-        # Обработка валют и алмазов: респавн при сборе
+        # Обработка валют и алмазов
         for i in range(len(state['money_positions'])):
             mx, my = state['money_positions'][i]
             money_rect = pygame.Rect(mx, my, money_size, money_size)
@@ -704,30 +761,31 @@ def game_loop_with_state(state):
                 state['diamond_positions'][i] = (random.randint(0, width - diamond_size), random.randint(0, height - diamond_size))
 
         if monster_rect.colliderect(enemy_rect):
-            # Монстр атакует врага (кд зависит от улучшений)
             if current_time - state['last_monkey_attack_time'] >= attack_cooldown_levels[state['attack_cooldown_index']]:
                 dmg = state['attack_damage']
                 state['enemy_hp'] -= dmg
                 state['last_monkey_attack_time'] = current_time
 
-            # Враг атакует монстра (раз в 1 сек)
             if current_time - state['last_enemy_attack_time'] >= 1000:
                 incoming = state['enemy_attack']
                 state['monkey_hp'] -= incoming
                 state['last_enemy_attack_time'] = current_time
 
-        # Проверка смертей и респавн врага — всегда, вне веток атак
+        # Проверка смерти врага и респавн с переходом на следующий уровень
         if state['enemy_hp'] <= 0:
-            # Награда игроку: +5 HP (лечение) и +5 к урону
-            state['monkey_hp'] += 5
-            state['attack_damage'] += 5
-            # Усиление врага на +5 HP и +5 урона каждый раз
-            state['enemy_base_hp'] = state.get('enemy_base_hp', 20) + 5
-            state['enemy_base_attack'] = state.get('enemy_base_attack', 5) + 5
-            state['enemy_hp'] = state['enemy_base_hp']
-            state['enemy_attack'] = state['enemy_base_attack']
+            # Переход к следующему уровню врага, если есть
+            if state['enemy_level'] < len(enemies) - 1:
+                state['enemy_level'] += 1
+            enemy_data = enemies[state['enemy_level']]
+            state['enemy_hp'] = enemy_data["hp"]
+            state['enemy_attack'] = enemy_data["attack"]
+            state['enemy_image'] = enemy_data["image"]
             state['enemy_x'] = random.randint(0, width - enemy_size)
             state['enemy_y'] = random.randint(0, height - enemy_size)
+
+            # Награды игроку
+            state['monkey_hp'] += 5
+            state['attack_damage'] += 5
 
         if state['monkey_hp'] <= 0:
             state['alive'] = False
@@ -743,16 +801,14 @@ def game_loop_with_state(state):
         for (dx, dy) in state['diamond_positions']:
             draw_diamond(dx, dy)
 
-        draw_enemy(state['enemy_x'], state['enemy_y'], state['enemy_hp'], state['enemy_attack'])
+        draw_enemy(state['enemy_x'], state['enemy_y'], state['enemy_hp'], state['enemy_attack'], state['enemy_image'])
         draw_monster(state['x'], state['y'])
         draw_health_bar(state['x'], state['y'] - 15, state['monkey_hp'], 20, monster_size, 10)
         draw_health_bar(state['enemy_x'], state['enemy_y'] - 15, state['enemy_hp'], 20, enemy_size, 10)
 
-        show_score(state['score'], state['monkey_hp'], state['attack_damage'], len(state['money_positions']), len(state['diamond_positions']), state['currency_multiplier'])
+        show_score(state['score'], state['monkey_hp'], state['attack_damage'], len(state['money_positions']),
+                   len(state['diamond_positions']), state['currency_multiplier'])
 
-        # Больше нет суперспособностей; дополнительного HUD не требуется
-
-        # Отрисовка магазина, если он открыт (F)
         if shop_open:
             draw_shop(state)
 
@@ -767,7 +823,9 @@ def game_loop_with_state(state):
 
         pygame.display.update()
 
+
 def main():
+    load_enemy_images()
     while True:
         loaded_state = menu()
         if loaded_state is None:
@@ -775,6 +833,7 @@ def main():
         else:
             state = loaded_state
         game_loop_with_state(state)
+
 
 if __name__ == "__main__":
     main()
