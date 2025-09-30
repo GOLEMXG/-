@@ -7,12 +7,10 @@ import sys
 import time
 import json
 
-
 pygame.init()
 width, height = 1920, 1080
 win = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Убей пещерного монстра")
-
 
 gray = (200, 200, 200)
 gold = (255, 215, 0)
@@ -24,7 +22,6 @@ shop_bg_color = (180, 180, 180)
 admin_bg_color = (30, 30, 30)  # Темный фон для админ меню
 clock = pygame.time.Clock()
 
-
 monster_size = 80
 money_size = 40
 diamond_size = 40
@@ -32,21 +29,17 @@ speed = 8  # будет изменяться админом
 enemy_speed = 4
 enemy_size = 70
 
-
 font = pygame.font.SysFont(None, 48)
 game_over_font = pygame.font.SysFont(None, 72)
 menu_font = pygame.font.SysFont(None, 80)
 shop_font = pygame.font.SysFont(None, 30)
 
-
 SAVE_FILE = "savegame.json"
-
 
 attack_cooldown_levels = [9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000]
 attack_cooldown_prices = [50, 100, 200, 300, 500, 800, 1200, 1500, 2000]
 hp_regen_levels = [9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1000]
 hp_regen_prices = [50, 100, 200, 300, 500, 800, 1200, 1500, 2000]
-
 
 def load_image_from_url(url, size, retries=1, delay=0.5, timeout=2.0):
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -65,7 +58,6 @@ def load_image_from_url(url, size, retries=1, delay=0.5, timeout=2.0):
     print(f"Не удалось загрузить изображение с {url}: {last_err}. Использую плейсхолдер.")
     return None
 
-
 monster_image_url = "https://img.itch.zone/aW1nLzE1MDU5MTE3LnBuZw==/original/q6WAbp.png"
 money_image_url = "https://www.clipartmax.com/png/full/395-3953417_clip-art-pixel-art-money-clip-art-pixel-art-money.png"
 diamond_image_url = "https://lootx.com/assets/images-giveaways/psx-gem.png"
@@ -74,11 +66,9 @@ monster_image = load_image_from_url(monster_image_url, (monster_size, monster_si
 money_image = load_image_from_url(money_image_url, (money_size, money_size))
 diamond_image = load_image_from_url(diamond_image_url, (diamond_size, diamond_size))
 
-
-game_bg_url = "https://media.thingtrunk.com/press-kit/book-of-demons/images/bod_artwork_07.png"
+game_bg_url = "C:\Users\admin\Pictures\New Piskel (1)укук.gif"
 game_bg_image = load_image_from_url(game_bg_url, (width, height))
 
-# Список врагов с параметрами и URL их картинок
 enemies = [
     {
         "name": "Монстр",
@@ -102,17 +92,16 @@ enemies = [
         "name": "Приведение",
         "hp": 80,
         "attack": 40,
-        "image_url": "file:///C:/Users/admin/Pictures/New%20Piskel%20(2).png"  # Пример, при необходимости замените
+        "image_url": "file:///C:/Users/admin/Pictures/New%20Piskel%20(2).png"
     },
     {
         "name": "Дракон",
         "hp": 100,
         "attack": 80,
-        "image_url": "https://avatars.mds.yandex.net/i?id=748542c47ea86b5dd9723f64008654c9_sr-4633509-images-thumbs&n=13"  # Пример, при необходимости замените
+        "image_url": "https://avatars.mds.yandex.net/i?id=748542c47ea86b5dd9723f64008654c9_sr-4633509-images-thumbs&n=13"
     },
 ]
 
-# Загрузка изображений врагов
 def load_enemy_images():
     for enemy in enemies:
         img = load_image_from_url(enemy["image_url"], (enemy_size, enemy_size))
@@ -122,7 +111,6 @@ def load_enemy_images():
             enemy["image"] = placeholder
         else:
             enemy["image"] = img
-
 
 def draw_health_bar(x, y, current_hp, max_hp, bar_width, bar_height):
     ratio = max(0, min(current_hp, max_hp)) / max_hp
@@ -136,20 +124,17 @@ def draw_health_bar(x, y, current_hp, max_hp, bar_width, bar_height):
     pygame.draw.rect(win, fill_color, (x, y, int(bar_width * ratio), bar_height))
     pygame.draw.rect(win, black, (x, y, bar_width, bar_height), 2)
 
-
 def draw_monster(x, y):
     if monster_image:
         win.blit(monster_image, (x, y))
     else:
         pygame.draw.rect(win, (139, 69, 19), (x, y, monster_size, monster_size))
 
-
 def draw_money(x, y):
     if money_image:
         win.blit(money_image, (x, y))
     else:
         pygame.draw.rect(win, gold, (x, y, money_size, money_size))
-
 
 def draw_diamond(x, y):
     if diamond_image:
@@ -162,7 +147,6 @@ def draw_diamond(x, y):
             (x, y + diamond_size // 2)
         ])
 
-# Изменена с добавлением изображения врага
 def draw_enemy(x, y, hp, attack, enemy_image):
     if enemy_image:
         win.blit(enemy_image, (x, y))
@@ -173,14 +157,12 @@ def draw_enemy(x, y, hp, attack, enemy_image):
     win.blit(hp_text, (x, y - 80))
     win.blit(att_text, (x, y - 50))
 
-
 def show_score(score, hp, attack_damage, money_count, diamond_count, currency_multiplier):
     mult_text = f"x{currency_multiplier}"
     text = font.render(
         f"Валюта: {score}  HP: {hp}  Урон: {attack_damage}  Деньги: {money_count}  Алмазы: {diamond_count}  Множитель валюты: {mult_text}",
         True, white)
     win.blit(text, (4, 4))
-
 
 def show_game_over(message):
     t1 = game_over_font.render("Игра окончена!", True, red)
@@ -194,7 +176,6 @@ def show_game_over(message):
     win.blit(t3, r3)
     pygame.display.update()
 
-
 def save_game(state):
     try:
         data = state.copy()
@@ -204,7 +185,6 @@ def save_game(state):
             json.dump(data, f)
     except Exception as e:
         print("Ошибка сохранения:", e)
-
 
 def load_game():
     try:
@@ -216,7 +196,6 @@ def load_game():
     except Exception as e:
         print("Ошибка загрузки сохранения или сохранения нет:", e)
         return None
-
 
 def reset_game():
     global speed
@@ -836,4 +815,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    load_enemy_images()
+    while True:
+        loaded_state = menu()
+        if loaded_state is None:
+            state = reset_game()
+        else:
+            state = loaded_state
+        game_loop_with_state(state)
